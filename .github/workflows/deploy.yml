@@ -72,8 +72,8 @@ jobs:
             docker network ls | grep -q npm_default || docker network create npm_default
 
             # Bring it up
-            docker compose pull
-            docker compose up -d
+            docker-compose pull
+            docker-compose up -d
 
             # Verify
             docker ps --filter "name=obsidian_remote" --format "table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}"

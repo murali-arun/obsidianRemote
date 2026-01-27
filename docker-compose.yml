@@ -1,6 +1,6 @@
 services:
   obsidian:
-    image: lscr.io/linuxserver/obsidian:latest
+    image: linuxserver/obsidian:latest
     container_name: obsidian_remote
     environment:
       - PUID=1000

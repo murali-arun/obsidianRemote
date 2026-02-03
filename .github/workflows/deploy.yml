@@ -71,6 +71,11 @@ jobs:
             # Make sure the NPM network exists (if you use Nginx Proxy Manager)
             docker network ls | grep -q npm_default || docker network create npm_default
 
+            # Remove the corrupted container and clean up orphans
+            docker stop obsidian_remote || true
+            docker rm obsidian_remote || true
+            docker-compose down --remove-orphans || true
+
             # Bring it up
             docker-compose pull
             docker-compose up -d

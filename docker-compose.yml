@@ -22,7 +22,7 @@ services:
       - seccomp:unconfined
     restart: unless-stopped
     networks:
-      - obsidian_internal
+      - npm_default
 
   authelia:
     image: authelia/authelia:latest
@@ -33,7 +33,6 @@ services:
       - TZ=America/Los_Angeles
     restart: unless-stopped
     networks:
-      - obsidian_internal
       - npm_default
 
   redis:
@@ -41,12 +40,10 @@ services:
     container_name: obsidian_redis
     restart: unless-stopped
     networks:
-      - obsidian_internal
+      - npm_default
 
 networks:
   npm_default:
     external: true
-  obsidian_internal:
-    internal: true
 
 

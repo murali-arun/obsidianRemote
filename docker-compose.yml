@@ -8,6 +8,7 @@ services:
       - TZ=America/Los_Angeles
       # Performance optimizations
       - CUSTOM_PORT=3001
+      - CUSTOM_HTTPS_PORT=
     volumes:
       - /opt/obsidianRemote/config:/config
     tmpfs:

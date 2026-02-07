@@ -30,6 +30,10 @@ temp/
 .env.local
 .env.production.local
 
+# Authelia runtime files (contain secrets and user data)
+authelia/db.sqlite3
+authelia/notification.txt
+
 # Cache
 .cache/
 .parcel-cache/

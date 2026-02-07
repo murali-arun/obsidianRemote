@@ -22,10 +22,31 @@ services:
       - seccomp:unconfined
     restart: unless-stopped
     networks:
+      - obsidian_internal
+
+  authelia:
+    image: authelia/authelia:latest
+    container_name: obsidian_authelia
+    volumes:
+      - ./authelia:/config
+    environment:
+      - TZ=America/Los_Angeles
+    restart: unless-stopped
+    networks:
+      - obsidian_internal
       - npm_default
+
+  redis:
+    image: redis:alpine
+    container_name: obsidian_redis
+    restart: unless-stopped
+    networks:
+      - obsidian_internal
 
 networks:
   npm_default:
     external: true
+  obsidian_internal:
+    internal: true
 
 

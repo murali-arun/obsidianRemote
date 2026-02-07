@@ -6,6 +6,8 @@ on:
     branches: [ "main" ]
     paths:
       - "docker-compose.yml"
+      - "authelia/**"
+      - "setup-passkey.sh"
       - ".github/workflows/deploy.yml"
       - "README.md"
 
@@ -53,9 +55,35 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT || 22 }}
-          source: "docker-compose.yml"
+          source: "docker-compose.yml,setup-passkey.sh,authelia"
           target: "/opt/obsidianRemote/"
           overwrite: true
+
+      - name: Setup Authelia (first time or if config missing)
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          script: |
+            set -e
+            cd /opt/obsidianRemote
+            
+            # Make setup script executable
+            chmod +x setup-passkey.sh
+            
+            # Only run setup if it hasn't been configured yet
+            if grep -q "CHANGE_THIS_TO_A_RANDOM_STRING" authelia/configuration.yml 2>/dev/null; then
+              echo "Running initial Authelia setup..."
+              AUTH_DOMAIN="${{ secrets.AUTH_DOMAIN }}" \
+              AUTH_USERNAME="${{ secrets.AUTH_USERNAME }}" \
+              AUTH_PASSWORD="${{ secrets.AUTH_PASSWORD }}" \
+              AUTH_EMAIL="${{ secrets.AUTH_EMAIL }}" \
+              ./setup-passkey.sh
+            else
+              echo "Authelia already configured, skipping setup..."
+            fi
 
       - name: Pull + restart Obsidian Remote
         uses: appleboy/ssh-action@v1.2.0

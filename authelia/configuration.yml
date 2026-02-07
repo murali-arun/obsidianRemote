@@ -1,0 +1,71 @@
+---
+theme: dark
+default_2fa_method: "webauthn"
+
+server:
+  host: 0.0.0.0
+  port: 9091
+  path: ""
+  enable_pprof: false
+  enable_expvars: false
+
+log:
+  level: info
+
+jwt_secret: CHANGE_THIS_TO_A_RANDOM_STRING
+
+default_redirection_url: https://obsidian.yourdomain.com
+
+totp:
+  issuer: Obsidian
+
+webauthn:
+  disable: false
+  display_name: Obsidian Remote
+  attestation_conveyance_preference: indirect
+  user_verification: preferred
+  timeout: 60s
+
+authentication_backend:
+  file:
+    path: /config/users_database.yml
+    password:
+      algorithm: argon2
+      argon2:
+        variant: argon2id
+        iterations: 3
+        memory: 65536
+        parallelism: 4
+        key_length: 32
+        salt_length: 16
+
+access_control:
+  default_policy: deny
+  rules:
+    - domain: "*.yourdomain.com"
+      policy: two_factor
+
+session:
+  name: obsidian_session
+  domain: yourdomain.com
+  same_site: lax
+  secret: CHANGE_THIS_TO_ANOTHER_RANDOM_STRING
+  expiration: 1h
+  inactivity: 5m
+  remember_me_duration: 1M
+  redis:
+    host: redis
+    port: 6379
+
+regulation:
+  max_retries: 3
+  find_time: 2m
+  ban_time: 5m
+
+storage:
+  local:
+    path: /config/db.sqlite3
+
+notifier:
+  filesystem:
+    filename: /config/notification.txt

@@ -76,6 +76,9 @@ jobs:
             docker rm obsidian_remote || true
             docker-compose down --remove-orphans || true
 
+            # Clear nginx config to regenerate for HTTP-only (preserves vault data)
+            rm -rf /opt/obsidianRemote/config/data/nginx /opt/obsidianRemote/config/log/nginx
+
             # Bring it up
             docker-compose pull
             docker-compose up -d

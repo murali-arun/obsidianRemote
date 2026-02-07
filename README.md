@@ -34,11 +34,11 @@ Set these in your GitHub repo settings → **Secrets and variables** → **Actio
 ## 3) Nginx Proxy Manager (NPM) config
 Create a Proxy Host:
 - Domain: `obsidian.yourdomain.com`
-- Scheme: `https`
+- Scheme: `http`
 - Forward Hostname/IP: `obsidian_remote`
 - Forward Port: `3001`
-- SSL: Request a Let’s Encrypt cert for your domain
-- **Disable Upstream SSL Verification** (the container uses a self-signed cert internally)
+- SSL: Request a Let's Encrypt cert for your domain
+- Websockets Support: ON
 
 ## Security warning (important)
 Do **not** expose this app directly to the public internet without strong access control.

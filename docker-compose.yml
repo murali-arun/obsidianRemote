@@ -6,14 +6,18 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=America/Los_Angeles
+      - SUBFOLDER=/
+      - KEYBOARD=en-us-qwerty
+      - DISPLAY_REFRESH=60
     volumes:
       - /opt/obsidianRemote/config:/config
     tmpfs:
-      - /tmp:size=512M,mode=1777
-    shm_size: "2gb"
-    mem_limit: 4g
-    mem_reservation: 2g
-    cpus: 2
+      - /tmp:size=1G,mode=1777
+    shm_size: "4gb"
+    mem_limit: 6g
+    mem_reservation: 3g
+    cpus: 4
+    cpu_shares: 2048
     security_opt:
       - seccomp:unconfined
     restart: unless-stopped

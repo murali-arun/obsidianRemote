@@ -24,26 +24,9 @@ services:
     networks:
       - npm_default
 
-  authelia:
-    image: authelia/authelia:latest
-    container_name: obsidian_authelia
-    volumes:
-      - ./authelia:/config
-    environment:
-      - TZ=America/Los_Angeles
-    restart: unless-stopped
-    networks:
-      - npm_default
-
-  redis:
-    image: redis:alpine
-    container_name: obsidian_redis
-    restart: unless-stopped
-    networks:
-      - npm_default
-
 networks:
   npm_default:
     external: true
+
 
 

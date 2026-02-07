@@ -1,24 +1,19 @@
 services:
   obsidian:
-    image: linuxserver/obsidian:latest
+    image: lscr.io/linuxserver/obsidian:latest
     container_name: obsidian_remote
     environment:
       - PUID=1000
       - PGID=1000
       - TZ=America/Los_Angeles
-      - CUSTOM_PORT=3001
-      - CUSTOM_HTTPS_PORT=3001
     volumes:
       - /opt/obsidianRemote/config:/config
     tmpfs:
-      # Use RAM for temporary files - faster I/O
       - /tmp:size=512M,mode=1777
     shm_size: "2gb"
-    # Resource limits to prevent memory leaks
     mem_limit: 4g
     mem_reservation: 2g
     cpus: 2
-    # Security & performance options
     security_opt:
       - seccomp:unconfined
     restart: unless-stopped
@@ -28,3 +23,5 @@ services:
 networks:
   npm_default:
     external: true
+
+

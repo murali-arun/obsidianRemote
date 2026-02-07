@@ -16,7 +16,7 @@ services:
     shm_size: "4gb"
     mem_limit: 6g
     mem_reservation: 3g
-    cpus: 4
+    cpus: 2
     cpu_shares: 2048
     security_opt:
       - seccomp:unconfined

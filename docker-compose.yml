@@ -6,9 +6,8 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=America/Los_Angeles
-      # Performance optimizations
       - CUSTOM_PORT=3001
-      - CUSTOM_HTTPS_PORT=
+      - CUSTOM_HTTPS_PORT=3001
     volumes:
       - /opt/obsidianRemote/config:/config
     tmpfs:

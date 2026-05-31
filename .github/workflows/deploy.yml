@@ -1,4 +1,4 @@
-name: Deploy Obsidian Remote (Docker Compose)
+name: Deploy Obsidian LiveSync (CouchDB)
 
 on:
   workflow_dispatch:
@@ -6,8 +6,8 @@ on:
     branches: [ "main" ]
     paths:
       - "docker-compose.yml"
+      - "couchdb/local.ini"
       - ".github/workflows/deploy.yml"
-      - "README.md"
 
 jobs:
   deploy:
@@ -17,24 +17,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Safe debug (does NOT print key)
-      - name: Debug deploy inputs (safe)
-        shell: bash
-        env:
-          HOST: ${{ secrets.VPS_HOST }}
-          USER: ${{ secrets.VPS_USERNAME }}
-          KEY:  ${{ secrets.VPS_SSH_KEY }}
-        run: |
-          echo "HOST=$HOST"
-          echo "USER=$USER"
-          if [ -z "$KEY" ]; then
-            echo "SSH KEY: NOT SET"
-          else
-            echo "SSH KEY: SET (length=${#KEY})"
-          fi
-          echo "PORT=${{ secrets.VPS_PORT || 22 }}"
-
-      - name: Ensure target dir exists
+      - name: Ensure target dirs exist
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -43,10 +26,10 @@ jobs:
           port: ${{ secrets.VPS_PORT || 22 }}
           script: |
             set -e
-            mkdir -p /opt/obsidianRemote/config
-            ls -la /opt/obsidianRemote
+            mkdir -p /opt/obsidianRemote/couchdb/data
+            mkdir -p /opt/obsidianRemote/couchdb/config
 
-      - name: Upload docker-compose.yml to VPS
+      - name: Upload docker-compose.yml
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -57,7 +40,38 @@ jobs:
           target: "/opt/obsidianRemote/"
           overwrite: true
 
-      - name: Pull + restart Obsidian Remote
+      - name: Upload CouchDB config
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          source: "couchdb/local.ini"
+          target: "/opt/obsidianRemote/couchdb/config/"
+          strip_components: 1
+          overwrite: true
+
+      - name: Write .env from secrets
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          envs: COUCHDB_USER,COUCHDB_PASSWORD
+          script: |
+            set -e
+            cat > /opt/obsidianRemote/.env <<EOF
+            COUCHDB_USER=$COUCHDB_USER
+            COUCHDB_PASSWORD=$COUCHDB_PASSWORD
+            EOF
+            chmod 600 /opt/obsidianRemote/.env
+        env:
+          COUCHDB_USER: ${{ secrets.COUCHDB_USER }}
+          COUCHDB_PASSWORD: ${{ secrets.COUCHDB_PASSWORD }}
+
+      - name: Pull + restart CouchDB
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -68,20 +82,9 @@ jobs:
             set -e
             cd /opt/obsidianRemote
 
-            # Make sure the NPM network exists (if you use Nginx Proxy Manager)
             docker network ls | grep -q npm_default || docker network create npm_default
 
-            # Remove the corrupted container and clean up orphans
-            docker stop obsidian_remote || true
-            docker rm obsidian_remote || true
-            docker-compose down --remove-orphans || true
+            docker compose pull
+            docker compose up -d
 
-            # Clear nginx config to regenerate for HTTP-only (preserves vault data)
-            rm -rf /opt/obsidianRemote/config/data/nginx /opt/obsidianRemote/config/log/nginx
-
-            # Bring it up
-            docker-compose pull
-            docker-compose up -d
-
-            # Verify
-            docker ps --filter "name=obsidian_remote" --format "table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}"
+            docker ps --filter "name=obsidian_sync" --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"

@@ -1,61 +1,73 @@
-# Obsidian Remote (Docker + Nginx Proxy Manager)
+# Obsidian LiveSync (Self-hosted CouchDB)
 
-This repo deploys **Obsidian in your browser** using the LinuxServer.io container image (`lscr.io/linuxserver/obsidian`).
+Syncs your Obsidian vault across all devices via a self-hosted CouchDB instance on your VPS. Native Obsidian app on each device — no VNC, no remote desktop.
 
 ## What you get
-- Obsidian running as a Docker container on your VPS
-- Access via a subdomain through **Nginx Proxy Manager (NPM)**
-- Persistent vault/config storage at: `/opt/obsidianRemote/config`
+- Real-time vault sync between desktop, mobile, and any other Obsidian install
+- Vault data stays on your VPS (no third-party sync)
+- ~200 MB RAM vs the old VNC approach's 3–6 GB
+- CouchDB accessible at `obsidian-sync.<domain>` via HTTPS
 
 ## Requirements
-- A VPS with Docker + Docker Compose installed
-- Nginx Proxy Manager already running on the same VPS
-- A Docker network shared with NPM (commonly: `npm_default`)
-
-## 1) VPS setup (one-time)
-Create the external network if it doesn't exist:
-
-```bash
-docker network ls | grep npm_default || docker network create npm_default
-```
-
-## 2) Deploy
-Push to `main`. The included GitHub Action:
-- Copies `docker-compose.yml` to `/opt/obsidianRemote`
-- Runs `docker compose pull && docker compose up -d`
-
-### GitHub Secrets needed
-Set these in your GitHub repo settings → **Secrets and variables** → **Actions**:
-- `VPS_HOST`
-- `VPS_USERNAME`
-- `VPS_PORT`
-- `VPS_SSH_KEY`
-
-## 3) Nginx Proxy Manager (NPM) config
-Create a Proxy Host:
-- Domain: `obsidian.yourdomain.com`
-- Scheme: `http`
-- Forward Hostname/IP: `obsidian_remote`
-- Forward Port: `3000`
-- SSL: Request a Let's Encrypt cert for your domain
-- Websockets Support: ON
-
-## Security warning (important)
-Do **not** expose this app directly to the public internet without strong access control.
-Add at least one of:
-- Cloudflare Access / Zero Trust
-- Authelia / OAuth / SSO
-- NPM Basic Auth (minimum baseline)
+- VPS with Docker + Docker Compose
+- Nginx Proxy Manager on the same VPS (`npm_default` network)
+- Obsidian installed on each device with the [obsidian-livesync plugin](https://github.com/vrtmrz/obsidian-livesync)
 
 ---
 
-## Optional: SSO with Passkey Authentication
+## 1) GitHub Secrets
 
-If you want to add Authelia for passkey authentication (Face ID, Touch ID, Windows Hello), see the optional guides:
-- [SSO-GUIDE.md](SSO-GUIDE.md) - Multi-service SSO setup
-- [AGENTS.md](AGENTS.md) - Troubleshooting and configuration details
+Add these to your repo → Settings → Secrets → Actions:
 
-## Notes
-- Vault/config persists under `/opt/obsidianRemote/config`.
-- If you want a different server path, change the compose volume.
+| Secret | Value |
+|--------|-------|
+| `VPS_HOST` | VPS IP or hostname |
+| `VPS_USERNAME` | SSH user |
+| `VPS_PORT` | SSH port (usually 22) |
+| `VPS_SSH_KEY` | Private SSH key |
+| `COUCHDB_USER` | CouchDB admin username |
+| `COUCHDB_PASSWORD` | CouchDB admin password (make it strong) |
 
+## 2) Deploy
+
+Push to `main`. The GitHub Action will:
+1. Create `/opt/obsidianRemote/couchdb/data` and `config` dirs on VPS
+2. Copy `docker-compose.yml` and `couchdb/local.ini`
+3. Write `.env` with your CouchDB credentials
+4. `docker compose pull && up -d`
+
+## 3) Nginx Proxy Manager
+
+Create a Proxy Host:
+- Domain: `obsidian-sync.yourdomain.com`
+- Scheme: `http`
+- Forward Hostname/IP: `obsidian_sync`
+- Forward Port: `5984`
+- SSL: Let's Encrypt
+- Websockets: ON (needed for live sync)
+
+No forward auth needed — CouchDB requires credentials on every request.
+
+## 4) Plugin setup (each device)
+
+1. Install **Self-hosted LiveSync** from Obsidian community plugins
+2. Open plugin settings → Setup wizard → "Use the setup wizard"
+3. Enter:
+   - Remote server URL: `https://obsidian-sync.yourdomain.com`
+   - Username: your `COUCHDB_USER`
+   - Password: your `COUCHDB_PASSWORD`
+   - Database name: `obsidian` (or anything consistent across devices)
+4. Let the wizard configure CORS and create the database
+5. Enable sync
+
+On subsequent devices, use the wizard's "Copy setup from another device" option (generates a passphrase you paste on the new device).
+
+---
+
+## Vault data location
+
+CouchDB data lives at `/opt/obsidianRemote/couchdb/data` on the VPS. Back this up to keep your vault safe.
+
+## CouchDB admin UI
+
+Available at `https://obsidian-sync.yourdomain.com/_utils/` — log in with your admin credentials to inspect databases, users, and config.

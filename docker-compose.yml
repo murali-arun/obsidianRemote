@@ -1,25 +1,11 @@
 services:
-  obsidian:
-    image: lscr.io/linuxserver/obsidian:latest
-    container_name: obsidian_remote
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=America/Los_Angeles
-      - SUBFOLDER=/
-      - KEYBOARD=en-us-qwerty
-      - DISPLAY_REFRESH=60
+  couchdb:
+    image: couchdb:3
+    container_name: obsidian_sync
+    env_file: .env
     volumes:
-      - /opt/obsidianRemote/config:/config
-    tmpfs:
-      - /tmp:size=1G,mode=1777
-    shm_size: "4gb"
-    mem_limit: 6g
-    mem_reservation: 3g
-    cpus: 2
-    cpu_shares: 2048
-    security_opt:
-      - seccomp:unconfined
+      - /opt/obsidianRemote/couchdb/data:/opt/couchdb/data
+      - /opt/obsidianRemote/couchdb/config:/opt/couchdb/etc/local.d
     restart: unless-stopped
     networks:
       - npm_default
@@ -27,6 +13,3 @@ services:
 networks:
   npm_default:
     external: true
-
-
-

@@ -84,7 +84,7 @@ jobs:
 
             docker network ls | grep -q npm_default || docker network create npm_default
 
-            docker compose pull
-            docker compose up -d
+            docker-compose pull
+            docker-compose up -d
 
             docker ps --filter "name=obsidian_sync" --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"
